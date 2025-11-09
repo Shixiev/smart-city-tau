@@ -1,33 +1,51 @@
 import { useState } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const AIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { t } = useLanguage();
+  const { toast } = useToast();
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+  const handleSend = async () => {
+    if (!message.trim() || isLoading) return;
 
     const userMessage = message;
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setMessage('');
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        'Мен сізге көмектесуге дайынмын! Қала туралы не білгіңіз келеді?',
-        'Ақтау қаласында көптеген қызықты оқиғалар бар. Картаны қараңыз!',
-        'Сіз экология мәселесі туралы хабарлағыңыз келе ме?',
-        'Бүгін ауа райы өте жақсы. +23°C, желсіз.',
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages((prev) => [...prev, { role: 'assistant', content: randomResponse }]);
-    }, 1000);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-ai', {
+        body: { messages: [...messages, { role: 'user', content: userMessage }] }
+      });
+
+      if (error) throw error;
+
+      if (data?.reply) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+      }
+    } catch (error) {
+      console.error('AI chat error:', error);
+      toast({
+        title: t.ai.error || 'Қате',
+        description: error instanceof Error ? error.message : 'AI-мен байланыс орнату мүмкін болмады',
+        variant: 'destructive',
+      });
+      setMessages((prev) => [...prev, { 
+        role: 'assistant', 
+        content: 'Кешіріңіз, қазір жауап бере алмаймын. Кейінірек қайталап көріңіз.' 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) {
@@ -104,9 +122,10 @@ const AIAssistant = () => {
           <Button
             onClick={handleSend}
             size="icon"
+            disabled={isLoading}
             className="rounded-full bg-gradient-to-br from-primary to-eco"
           >
-            <Send className="w-4 h-4" />
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>

@@ -70,6 +70,7 @@ export const translations = {
       greeting: 'Сәлем! Мен SmartAI, сенің көмекшіңмін. Не көмек керек бүгін?',
       placeholder: 'Сұрағыңызды жазыңыз...',
       send: 'Жіберу',
+      error: 'Қате',
     },
     // Profile
     profile: {
@@ -161,6 +162,7 @@ export const translations = {
       greeting: 'Привет! Я SmartAI, твой помощник. Чем могу помочь сегодня?',
       placeholder: 'Напишите ваш вопрос...',
       send: 'Отправить',
+      error: 'Ошибка',
     },
     // Profile
     profile: {
